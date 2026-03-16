@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scoring Annonces Immobilières</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f8f7f4;
+            color: #37352f;
+            font-size: 12px;
+        }
+        .container { max-width: 980px; margin: 0 auto; padding: 10px 14px; }
+
+        .header { display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; }
+        h1 { font-size: 16px; font-weight: 700; }
+        .subtitle { color: #787774; font-size: 11px; }
+
+        .legend {
+            background: white; border-radius: 6px; padding: 8px 12px;
+            border: 1px solid #e8e7e4; margin-bottom: 8px;
+            display: flex; gap: 14px; flex-wrap: wrap; align-items: center;
+        }
+        .legend-title { font-size: 10px; font-weight: 600; color: #787774; text-transform: uppercase; letter-spacing: 0.4px; }
+        .legend-item { display: flex; align-items: center; gap: 4px; font-size: 10px; color: #6b6b68; }
+        .legend-pts { font-weight: 700; color: #0f7b0f; }
+
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+        .card {
+            background: white; border-radius: 6px; padding: 10px 12px;
+            border: 1px solid #e8e7e4; position: relative;
+        }
+        .card.top { border-color: #d9730d22; border-left: 3px solid #d9730d; }
+
+        .rank {
+            position: absolute; top: 9px; left: -5px;
+            width: 18px; height: 18px; border-radius: 50%;
+            font-size: 9px; font-weight: 700;
+            display: flex; align-items: center; justify-content: center; color: white;
+        }
+        .r1 { background: #d9730d; } .r2 { background: #787774; }
+        .r3 { background: #9065b0; } .rn { background: #d0cfcc; color: #37352f; }
+
+        .card-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 7px; gap: 8px; }
+        .card-meta { flex: 1; padding-left: 18px; }
+        .card-title { font-size: 12px; font-weight: 700; line-height: 1.3; margin-bottom: 3px; }
+        .card-title a { color: #37352f; text-decoration: none; }
+        .card-title a:hover { color: #2383e2; }
+        .card-tags { display: flex; gap: 4px; flex-wrap: wrap; }
+        .tag { display: inline-block; padding: 1px 6px; border-radius: 3px; font-size: 9px; font-weight: 500; }
+        .t-analyser  { background: #f0efed; color: #6b6b68; }
+        .t-interessant { background: #fef3c7; color: #d9730d; }
+        .t-visite    { background: #d3e5ef; color: #2383e2; }
+        .t-refuse    { background: #fde8e8; color: #e03e3e; }
+        .t-offre     { background: #dbeddb; color: #0f7b0f; }
+        .t-ville     { background: #f0efed; color: #787774; }
+
+        .score-badge { flex-shrink: 0; text-align: center; }
+        .score-val { font-size: 24px; font-weight: 700; line-height: 1; }
+        .score-max { font-size: 9px; color: #787774; }
+        .score-label { font-size: 9px; font-weight: 600; padding: 2px 6px; border-radius: 3px; margin-top: 3px; display: block; }
+        .s-excellent .score-val { color: #0f7b0f; }
+        .s-excellent .score-label { background: #dbeddb; color: #0f7b0f; }
+        .s-moyen .score-val { color: #d9730d; }
+        .s-moyen .score-label { background: #fadec9; color: #d9730d; }
+        .s-faible .score-val { color: #e03e3e; }
+        .s-faible .score-label { background: #fde8e8; color: #e03e3e; }
+
+        .infos { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 7px; }
+        .info { display: flex; flex-direction: column; gap: 1px; }
+        .info-l { font-size: 9px; color: #787774; text-transform: uppercase; letter-spacing: 0.3px; }
+        .info-v { font-size: 11px; font-weight: 600; }
+        .rv-good { color: #0f7b0f; } .rv-ok { color: #d9730d; } .rv-bad { color: #e03e3e; }
+
+        .dpe { display: inline-block; padding: 1px 5px; border-radius: 3px; font-size: 10px; font-weight: 700; }
+        .dpe-A { background: #2e7d32; color: white; }
+        .dpe-B { background: #388e3c; color: white; }
+        .dpe-C { background: #66bb6a; color: #1a1a1a; }
+        .dpe-D { background: #fdd835; color: #333; }
+        .dpe-E { background: #fb8c00; color: white; }
+        .dpe-F { background: #e53935; color: white; }
+        .dpe-G { background: #7b1fa2; color: white; }
+        .dpe-NC { background: #ccc; color: #555; }
+
+        .criteria { display: flex; flex-direction: column; gap: 3px; margin-bottom: 7px; }
+        .crit { display: flex; align-items: center; gap: 6px; }
+        .crit-icon { width: 13px; height: 13px; border-radius: 2px; display: flex; align-items: center; justify-content: center; font-size: 8px; flex-shrink: 0; }
+        .crit-icon.ok  { background: #dbeddb; color: #0f7b0f; }
+        .crit-icon.nok { background: #f0efed; color: #aaa; }
+        .crit-name { font-size: 10px; color: #6b6b68; flex: 1; }
+        .crit-pts { font-size: 10px; font-weight: 600; width: 34px; text-align: right; }
+        .crit-pts.ok { color: #0f7b0f; } .crit-pts.nok { color: #ccc; }
+
+        .bar-wrap { margin-bottom: 7px; }
+        .bar-track { height: 4px; background: #f0efed; border-radius: 2px; overflow: hidden; }
+        .bar-fill { height: 100%; border-radius: 2px; }
+
+        .note { font-size: 10px; color: #787774; font-style: italic; border-top: 1px solid #f5f4f1; padding-top: 6px; }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <div class="header">
+        <h1>📐 Scoring Annonces Immobilières</h1>
+        <span class="subtitle">Brice · Vincent · Justine — 10 annonces · 16/03/2026</span>
+    </div>
+
+    <div class="legend">
+        <span class="legend-title">Critères</span>
+        <span class="legend-item"><span class="legend-pts">30 pts</span> Renta ≥ 10%</span>
+        <span style="color:#d0cfcc">·</span>
+        <span class="legend-item"><span class="legend-pts">20 pts</span> Renta ≥ 7%</span>
+        <span style="color:#d0cfcc">·</span>
+        <span class="legend-item"><span class="legend-pts">20 pts</span> DPE A/B/C</span>
+        <span style="color:#d0cfcc">·</span>
+        <span class="legend-item"><span class="legend-pts">25 pts</span> Prix ≤ 100k€</span>
+        <span style="color:#d0cfcc">·</span>
+        <span class="legend-item"><span class="legend-pts">25 pts</span> Travaux ≤ 5k€</span>
+        <span style="margin-left:auto; font-size:10px; font-weight:600; color:#0f7b0f;">≥ 70 pts = Excellent</span>
+    </div>
+
+    <div class="grid" id="grid"></div>
+</div>
+
+<script>
+const ANNONCES = [
+  { titre:"Studio Viry-Châtillon",          prix:65000,  loyer:480, travaux:0,     dpe:"C",  ville:"Viry-Châtillon",   statut:"Intéressant",  surface:20, commentaires:"Offre à 60k€, en attente de réponse",                  url:"https://www.notion.so/325a250413e0812aa834c0a84d7f3d34" },
+  { titre:"T2 lumineux centre Savigny",      prix:89000,  loyer:650, travaux:3000,  dpe:"C",  ville:"Savigny-sur-Orge", statut:"À analyser",   surface:38, commentaires:"Bon emplacement, proche RER C",                        url:"https://www.notion.so/325a250413e0816894ddf43b7d1a2122" },
+  { titre:"Studio Ambilly centre",           prix:82000,  loyer:550, travaux:4000,  dpe:"C",  ville:"Ambilly",          statut:"À analyser",   surface:25, commentaires:"Petit mais bien situé, proche tram",                  url:"https://www.notion.so/325a250413e081c998c2da27668df73f" },
+  { titre:"Parking couvert Savigny gare",    prix:12000,  loyer:80,  travaux:0,     dpe:"NC", ville:"Savigny-sur-Orge", statut:"Visite prévue",surface:12, commentaires:"Rentabilité élevée, gestion simple",                  url:"https://www.notion.so/325a250413e08143931afa4896f3c8fb" },
+  { titre:"Studio meublé Juvisy",            prix:72000,  loyer:520, travaux:1500,  dpe:"D",  ville:"Juvisy-sur-Orge",  statut:"À analyser",   surface:22, commentaires:"Proche gare, idéal pour location meublée",            url:"https://www.notion.so/325a250413e081bfba80d47ae0632d16" },
+  { titre:"T2 Athis-Mons avec balcon",       prix:95000,  loyer:680, travaux:5000,  dpe:"D",  ville:"Athis-Mons",       statut:"À analyser",   surface:40, commentaires:"Balcon, parking inclus",                              url:"https://www.notion.so/325a250413e081dba744d7fa542868ba" },
+  { titre:"T2 Gaillard proche frontière",    prix:110000, loyer:780, travaux:2000,  dpe:"B",  ville:"Gaillard",         statut:"À analyser",   surface:45, commentaires:"Excellent DPE, demande locative forte zone frontalière", url:"https://www.notion.so/325a250413e08109b22be150d8346ad5" },
+  { titre:"T3 Ville-la-Grand vue montagne",  prix:128000, loyer:900, travaux:8000,  dpe:"C",  ville:"Ville-la-Grand",   statut:"À analyser",   surface:58, commentaires:"Vue dégagée montagne, copro bien entretenue",         url:"https://www.notion.so/325a250413e08196b1aad50de3848430" },
+  { titre:"T3 à rénover Annemasse centre",   prix:125000, loyer:850, travaux:20000, dpe:"E",  ville:"Annemasse",        statut:"À analyser",   surface:62, commentaires:"Travaux importants mais potentiel de plus-value",      url:"https://www.notion.so/325a250413e081b2ae4fc3a185ceb1e1" },
+  { titre:"T2 Épinay-sur-Orge RER",          prix:115000, loyer:600, travaux:15000, dpe:"F",  ville:"Épinay-sur-Orge",  statut:"Refusé",       surface:35, commentaires:"DPE F, charges trop élevées, rentabilité insuffisante", url:"https://www.notion.so/325a250413e081498ef4fda13a84201f" },
+];
+
+const CRITERES = [
+  { label:"Rentabilité ≥ 10%", pts:30, check: a => a.renta >= 10 },
+  { label:"Rentabilité ≥ 7%",  pts:20, check: a => a.renta >= 7 && a.renta < 10 },
+  { label:"DPE A, B ou C",     pts:20, check: a => ["A","B","C"].includes(a.dpe) },
+  { label:"Prix ≤ 100 000 €",  pts:25, check: a => a.prix <= 100000 },
+  { label:"Travaux ≤ 5 000 €", pts:25, check: a => a.travaux <= 5000 },
+];
+
+const fmt = n => new Intl.NumberFormat('fr-FR').format(n) + ' €';
+const fmtPct = n => n.toFixed(1) + ' %';
+
+const STATUT_MAP = {
+  "À analyser":"t-analyser","Intéressant":"t-interessant","Visite prévue":"t-visite",
+  "Refusé":"t-refuse","Offre faite":"t-offre","Accepté":"t-offre","En attente":"t-analyser"
+};
+
+function calcScore(a) {
+  a.renta = a.prix > 0 ? (a.loyer * 12 / a.prix * 100) : 0;
+  let total = 0;
+  const detail = CRITERES.map(c => { const ok = c.check(a); if (ok) total += c.pts; return {...c, ok}; });
+  return { total, detail };
+}
+
+const scored = ANNONCES.map(a => { const {total, detail} = calcScore(a); return {...a, total, detail}; })
+  .sort((a,b) => b.total - a.total);
+
+const rankCls = i => ["r1","r2","r3"][i] || "rn";
+const badgeCls = s => s >= 70 ? "s-excellent" : s >= 40 ? "s-moyen" : "s-faible";
+const badgeLbl = s => s >= 70 ? "Excellent" : s >= 40 ? "Moyen" : "Faible";
+const barClr   = s => s >= 70 ? "#0f7b0f" : s >= 40 ? "#d9730d" : "#e03e3e";
+const rentaCls = r => r >= 8 ? "rv-good" : r >= 6 ? "rv-ok" : "rv-bad";
+
+document.getElementById('grid').innerHTML = scored.map((a, i) => `
+  <div class="card ${i < 3 ? 'top' : ''}">
+    <div class="rank ${rankCls(i)}">${i+1}</div>
+    <div class="card-head">
+      <div class="card-meta">
+        <div class="card-title"><a href="${a.url}" target="_blank">${a.titre}</a></div>
+        <div class="card-tags">
+          <span class="tag ${STATUT_MAP[a.statut] || 't-analyser'}">${a.statut}</span>
+          <span class="tag t-ville">${a.ville}</span>
+        </div>
+      </div>
+      <div class="score-badge ${badgeCls(a.total)}">
+        <div class="score-val">${a.total}</div>
+        <div class="score-max">/ 100</div>
+        <span class="score-label">${badgeLbl(a.total)}</span>
+      </div>
+    </div>
+
+    <div class="infos">
+      <div class="info"><span class="info-l">Prix</span><span class="info-v">${fmt(a.prix)}</span></div>
+      <div class="info"><span class="info-l">Loyer</span><span class="info-v">${fmt(a.loyer)}/m</span></div>
+      <div class="info"><span class="info-l">Travaux</span><span class="info-v">${a.travaux > 0 ? fmt(a.travaux) : '—'}</span></div>
+      <div class="info"><span class="info-l">Renta brute</span><span class="info-v ${rentaCls(a.renta)}">${fmtPct(a.renta)}</span></div>
+      <div class="info"><span class="info-l">Surface</span><span class="info-v">${a.surface} m²</span></div>
+      <div class="info"><span class="info-l">DPE</span><span class="dpe dpe-${a.dpe}">${a.dpe}</span></div>
+    </div>
+
+    <div class="criteria">
+      ${a.detail.map(c => `
+        <div class="crit">
+          <div class="crit-icon ${c.ok?'ok':'nok'}">${c.ok?'✓':'·'}</div>
+          <span class="crit-name">${c.label}</span>
+          <span class="crit-pts ${c.ok?'ok':'nok'}">${c.ok?'+'+c.pts:'—'}</span>
+        </div>`).join('')}
+    </div>
+
+    <div class="bar-wrap">
+      <div class="bar-track">
+        <div class="bar-fill" style="width:${a.total}%;background:${barClr(a.total)}"></div>
+      </div>
+    </div>
+
+    ${a.commentaires ? `<div class="note">💬 ${a.commentaires}</div>` : ''}
+  </div>
+`).join('');
+</script>
+</body>
+</html>
